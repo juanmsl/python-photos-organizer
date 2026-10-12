@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "photos-organizer"
+version = "0.1.0"
+description = "Desktop app that sorts photos and videos into year/month folders and renames them from their EXIF/metadata capture date."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "PySide6-Essentials>=6.8",  # Qt desktop UI (QtCore/QtGui/QtWidgets only)
+    "Pillow>=11.0",        # EXIF for JPEG/PNG/TIFF/WebP
+    "pillow-heif>=0.20",   # HEIC/HEIF support for Pillow (iPhone photos)
+    "ExifRead>=3.0",       # EXIF for RAW formats (CR2, NEF, ARW, DNG, ...)
+    "hachoir>=3.3",        # Creation date for videos (MP4, MOV, AVI, MKV, ...)
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.gui-scripts]
+photos-organizer = "photos_organizer.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
