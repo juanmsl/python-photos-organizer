@@ -5,7 +5,7 @@ import pytest
 from PIL import ExifTags, Image
 
 from photos_organizer.metadata import DateSource, get_capture_date, parse_exif_datetime
-from photos_organizer.organizer import Organizer, Status, TransferMode, build_destination
+from photos_organizer.organizer import Action, FolderLayout, Organizer, Status, build_destination
 from photos_organizer.scanner import scan_folder
 
 
@@ -22,6 +22,26 @@ def make_jpeg(path: Path, taken_at: str | None, color: str = "red") -> Path:
 def test_build_destination_matches_requested_pattern():
     dest = build_destination(Path("/out"), datetime(2014, 12, 6, 16, 22, 0), ".JPG")
     assert dest == Path("/out/2014/12/2014-12-06-T-16-22-00.jpg")
+
+
+@pytest.mark.parametrize(
+    ("layout", "expected"),
+    [
+        (FolderLayout.YEAR, "2014/2014-12-06-T-16-22-00.jpg"),
+        (FolderLayout.YEAR_MONTH, "2014/12/2014-12-06-T-16-22-00.jpg"),
+        (FolderLayout.YEAR_MONTH_DAY, "2014/12/06/2014-12-06-T-16-22-00.jpg"),
+    ],
+)
+def test_build_destination_folder_layouts(layout, expected):
+    dest = build_destination(Path("/out"), datetime(2014, 12, 6, 16, 22, 0), ".jpg", layout=layout)
+    assert dest == Path("/out") / expected
+
+
+def test_organizer_uses_selected_layout(tmp_path):
+    source = make_jpeg(tmp_path / "in" / "a.jpg", "2014:12:06 16:22:00")
+    result = Organizer(tmp_path / "out", layout=FolderLayout.YEAR_MONTH_DAY).process(source)
+    assert result.destination == tmp_path / "out" / "2014" / "12" / "06" / "2014-12-06-T-16-22-00.jpg"
+    assert result.destination.exists()
 
 
 @pytest.mark.parametrize(
@@ -62,7 +82,7 @@ def test_copy_into_year_month_folders(tmp_path):
 
 def test_move_removes_source(tmp_path):
     source = make_jpeg(tmp_path / "in" / "a.jpg", "2020:01:02 03:04:05")
-    result = Organizer(tmp_path / "out", TransferMode.MOVE).process(source)
+    result = Organizer(tmp_path / "out", Action.MOVE).process(source)
     assert result.status is Status.MOVED
     assert not source.exists()
 
@@ -110,3 +130,41 @@ def test_scan_is_recursive_and_skips_hidden(tmp_path):
     entries = scan_folder(tmp_path)
     assert [e.relative_path for e in entries] == ["a.jpg", str(Path("sub/deeper/b.JPG"))]
     assert {e.extension for e in entries} == {".jpg"}
+
+
+def test_delete_dry_run_keeps_file(tmp_path):
+    source = make_jpeg(tmp_path / "a.jpg", None)
+    result = Organizer(None, Action.DELETE, dry_run=True).process(source)
+    assert result.status is Status.PLANNED
+    assert source.exists()
+
+
+def test_delete_moves_to_trash_by_default(tmp_path, monkeypatch):
+    trashed = []
+    monkeypatch.setattr("photos_organizer.organizer.send2trash", trashed.append)
+    source = make_jpeg(tmp_path / "a.jpg", None)
+
+    result = Organizer(None, Action.DELETE).process(source)
+
+    assert result.status is Status.TRASHED
+    assert trashed == [source]
+
+
+def test_permanent_delete_removes_file(tmp_path, monkeypatch):
+    monkeypatch.setattr("photos_organizer.organizer.send2trash", pytest.fail)
+    source = make_jpeg(tmp_path / "a.jpg", None)
+
+    result = Organizer(None, Action.DELETE, permanent_delete=True).process(source)
+
+    assert result.status is Status.DELETED
+    assert not source.exists()
+
+
+def test_delete_reports_errors(tmp_path):
+    result = Organizer(None, Action.DELETE, permanent_delete=True).process(tmp_path / "missing.jpg")
+    assert result.status is Status.ERROR
+
+
+def test_copy_requires_output_dir():
+    with pytest.raises(ValueError):
+        Organizer(None, Action.COPY)
