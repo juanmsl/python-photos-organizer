@@ -7,7 +7,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from photos_organizer.organizer import Organizer, TransferMode
+from photos_organizer.organizer import Action, FolderLayout, Organizer
 from photos_organizer.scanner import FileEntry, scan_folder
 
 
@@ -41,14 +41,18 @@ class OrganizeWorker(QObject):
     def __init__(
         self,
         rows: list[tuple[int, FileEntry]],
-        output_dir: Path,
-        mode: TransferMode,
+        output_dir: Path | None,
+        action: Action,
         use_filesystem_fallback: bool,
         dry_run: bool,
+        layout: FolderLayout,
+        permanent_delete: bool,
     ) -> None:
         super().__init__()
         self._rows = rows
-        self._organizer = Organizer(output_dir, mode, use_filesystem_fallback, dry_run)
+        self._organizer = Organizer(
+            output_dir, action, use_filesystem_fallback, dry_run, layout, permanent_delete
+        )
         self._cancelled = False
 
     def cancel(self) -> None:

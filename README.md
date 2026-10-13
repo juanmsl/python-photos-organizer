@@ -1,11 +1,11 @@
 # Photos Organizer
 
 Desktop app (Python 3 + Qt/PySide6) that scans a folder recursively, lets you pick which file
-types to include, and copies or moves the matching files into an output folder. Each file is
-renamed from its capture date:
+types to include, and then copies or moves the matching files into an output folder, or deletes
+them. Copied and moved files are renamed from their capture date:
 
 ```
-<output>/YYYY/MM/YYYY-MM-DD-T-HH-MM-SS.ext
+<output>/YYYY/MM/YYYY-MM-DD-T-HH-MM-SS.ext        (default folder structure)
 ```
 
 For example, a JPG taken on 6 Dec 2014 at 4:22 PM goes to `<output>/2014/12/2014-12-06-T-16-22-00.jpg`.
@@ -30,9 +30,22 @@ python -m photos_organizer
 
 1. **Browse…** to choose the source folder. Every file under it (sub-folders included) is listed.
 2. In **File types**, tick the extensions to process. Photo, RAW and video types are pre-selected.
-3. Choose an **Output folder**, then pick **Copy** (default; originals stay put) or **Move**.
-4. **Preview** shows each file's date and destination without touching anything.
-   **Organize** does the copy/move.
+3. Choose an **Output folder** and a **Folder structure**:
+
+   | Folder structure | Example |
+   |------------------|---------|
+   | Year | `<output>/2014/2014-12-06-T-16-22-00.jpg` |
+   | Year / Month (default) | `<output>/2014/12/2014-12-06-T-16-22-00.jpg` |
+   | Year / Month / Day | `<output>/2014/12/06/2014-12-06-T-16-22-00.jpg` |
+
+4. Pick an **Action**:
+   - **Copy** (default): the originals stay where they are.
+   - **Move**: asks for confirmation first.
+   - **Delete matched files**: removes every file in the list. Files go to the **Trash** unless
+     *Permanently (skip Trash)* is ticked. No output folder is needed, and you are always asked to
+     confirm, with the default answer set to *No*.
+5. **Preview** shows what would happen (destinations, or which files would be deleted) without
+   touching anything. **Organize** / **Delete** carries it out.
 
 ## How the date is found
 
@@ -56,6 +69,10 @@ python -m photos_organizer
 pytest
 ```
 
+## Architecture decisions
+
+See [`adrs/`](adrs/) for the reasoning behind the design.
+
 ## Project layout
 
 ```
@@ -63,7 +80,7 @@ src/photos_organizer/
   app.py              # QApplication entry point
   scanner.py          # recursive folder scan
   metadata.py         # EXIF / video date extraction
-  organizer.py        # destination naming, collision handling, copy/move
+  organizer.py        # destination naming, folder layouts, collisions, copy/move/delete
   gui/main_window.py  # main window
   gui/file_table.py   # table model for the file list
   gui/workers.py      # background threads for scan/organize

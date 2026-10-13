@@ -15,6 +15,8 @@ _STATUS_COLORS = {
     Status.PLANNED: QColor("#2f6fdf"),
     Status.COPIED: QColor("#2e8b57"),
     Status.MOVED: QColor("#2e8b57"),
+    Status.TRASHED: QColor("#7f8c8d"),
+    Status.DELETED: QColor("#7f8c8d"),
     Status.DUPLICATE: QColor("#b8860b"),
     Status.NO_DATE: QColor("#b8860b"),
     Status.ERROR: QColor("#c0392b"),

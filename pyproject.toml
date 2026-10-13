@@ -14,6 +14,7 @@ dependencies = [
     "pillow-heif>=0.20",   # HEIC/HEIF support for Pillow (iPhone photos)
     "ExifRead>=3.0",       # EXIF for RAW formats (CR2, NEF, ARW, DNG, ...)
     "hachoir>=3.3",        # Creation date for videos (MP4, MOV, AVI, MKV, ...)
+    "Send2Trash>=1.8",     # Cross-platform "move to Trash" for the delete action
 ]
 
 [project.optional-dependencies]
