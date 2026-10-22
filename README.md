@@ -1,6 +1,6 @@
 # Photos Organizer
 
-Desktop app (Python 3 + Qt/PySide6) that scans a folder recursively, lets you pick which file
+Native macOS app (Swift + SwiftUI) that scans a folder recursively, lets you pick which file
 types to include, and then copies or moves the matching files into an output folder, or deletes
 them. Copied and moved files are renamed from their capture date:
 
@@ -10,23 +10,16 @@ them. Copied and moved files are renamed from their capture date:
 
 For example, a JPG taken on 6 Dec 2014 at 4:22 PM goes to `<output>/2014/12/2014-12-06-T-16-22-00.jpg`.
 
-## Setup
+## Install
 
-Requires Python 3.11+.
+Open `PhotosOrganizer-<version>.dmg` and drag **Photos Organizer** to **Applications**.
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"        # or: pip install -r requirements-dev.txt
-```
+Builds that aren't signed with a Developer ID are blocked by Gatekeeper the first time on other
+Macs: right-click the app → **Open**, or allow it in *System Settings → Privacy & Security*.
 
-## Run
+Requires macOS 14 (Sonoma) or later.
 
-```bash
-photos-organizer               # installed entry point
-# or
-python -m photos_organizer
-```
+## Use
 
 1. **Browse…** to choose the source folder. Every file under it (sub-folders included) is listed.
 2. In **File types**, tick the extensions to process. Photo, RAW and video types are pre-selected.
@@ -51,10 +44,10 @@ python -m photos_organizer
 
 | File type | Source |
 |-----------|--------|
-| JPG, PNG, TIFF, WebP, HEIC/HEIF | EXIF `DateTimeOriginal` → `DateTimeDigitized` → `DateTime` (Pillow, then ExifRead) |
-| RAW (CR2, CR3, NEF, ARW, DNG, ORF, RW2, RAF, …) | Same EXIF tags (ExifRead first, then Pillow) |
-| Video (MP4, MOV, M4V, 3GP, AVI, MKV, …) | Container creation date (hachoir). MP4/MOV store it in UTC, so it is converted to your local time zone |
-| Anything else / no metadata | File date (creation time on macOS, otherwise modification time), when *Use file date…* is ticked. Otherwise the file is skipped |
+| JPG, PNG, TIFF, WebP, HEIC/HEIF and RAW (CR2, CR3, NEF, ARW, DNG, ORF, RW2, RAF, …) | EXIF `DateTimeOriginal` → `DateTimeDigitized` → `DateTime` (ImageIO) |
+| MOV, MP4, M4V, 3GP | Apple's creation date (local time where it was recorded), else the `mvhd` creation time, stored in UTC and converted to your time zone |
+| Other videos (AVI, MKV, MTS, …) | Creation date, when AVFoundation can read the file |
+| Anything else / no metadata | File date (the earlier of creation and modification time), when *Use file date…* is ticked. Otherwise the file is skipped |
 
 ## Collisions and duplicates
 
@@ -63,26 +56,48 @@ python -m photos_organizer
   *Duplicate (skipped)*, so running the app twice on the same folder won't create copies.
 - Files already inside the output folder are never processed again.
 
-## Tests
+## Development
+
+Needs Swift 6 (Xcode or just the Command Line Tools: `xcode-select --install`).
 
 ```bash
-pytest
+make run     # swift run PhotosOrganizer
+make test    # swift test
+make app     # dist/Photos Organizer.app
+make dmg     # dist/PhotosOrganizer-<version>.dmg
 ```
+
+The version comes from the `VERSION` file. Packaging options (environment variables):
+
+| Variable | Effect |
+|----------|--------|
+| `SIGN_IDENTITY` | Codesign identity, e.g. `"Developer ID Application: Name (TEAMID)"`. Default `-` (ad-hoc). |
+| `NOTARY_PROFILE` | `notarytool` keychain profile; notarizes and staples the DMG. |
+| `UNIVERSAL=1` | Builds for Apple silicon and Intel (needs Xcode). |
+
+`make icon` regenerates `packaging/AppIcon.icns` from `scripts/make-icon.swift`.
 
 ## Architecture decisions
 
-See [`adrs/`](adrs/) for the reasoning behind the design.
+See [`adrs/`](adrs/) for the reasoning behind the design. [ADR 0003](adrs/0003-native-swift-macos-app.md)
+covers the move from Python/Qt to Swift.
 
 ## Project layout
 
 ```
-src/photos_organizer/
-  app.py              # QApplication entry point
-  scanner.py          # recursive folder scan
-  metadata.py         # EXIF / video date extraction
-  organizer.py        # destination naming, folder layouts, collisions, copy/move/delete
-  gui/main_window.py  # main window
-  gui/file_table.py   # table model for the file list
-  gui/workers.py      # background threads for scan/organize
-tests/
+Package.swift
+Sources/PhotosOrganizerCore/       # no UI; unit-tested
+  FileScanner.swift                # recursive folder scan
+  CaptureDate.swift                # EXIF / video / file date extraction
+  QuickTimeMovieHeader.swift       # MOV/MP4 mvhd creation time
+  LocalDateTime.swift              # wall-clock date used for names
+  Organizer.swift                  # destination naming, folder layouts, collisions, copy/move/delete
+Sources/PhotosOrganizer/           # SwiftUI app
+  PhotosOrganizerApp.swift         # entry point
+  AppModel.swift                   # window state, scan/organize tasks, settings
+  ContentView.swift                # main window, file-type filter, file table, log
+  Dialogs.swift                    # folder pickers and confirmations
+Tests/PhotosOrganizerCoreTests/
+packaging/                         # Info.plist template and app icon
+scripts/                           # build-app.sh, make-dmg.sh, make-icon.swift
 ```
