@@ -9,13 +9,14 @@ struct PhotosOrganizerApp: App {
     var body: some Scene {
         Window("Photos Organizer", id: "main") {
             ContentView(model: model)
-                .frame(minWidth: 900, minHeight: 600)
+                .frame(minWidth: 1040, minHeight: 720)
                 .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
                     model.cancel()
                     model.saveSettings()
                 }
         }
-        .defaultSize(width: 1200, height: 760)
+        .windowStyle(.hiddenTitleBar)
+        .defaultSize(width: 1240, height: 820)
         .commands {
             CommandGroup(replacing: .newItem) {}
         }
