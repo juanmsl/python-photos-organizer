@@ -20,13 +20,34 @@ func render(pixels: Int) -> Data {
     let inset = size * 100 / 1024
     let tile = NSRect(x: inset, y: inset, width: size - 2 * inset, height: size - 2 * inset)
     let shape = NSBezierPath(roundedRect: tile, xRadius: tile.width * 0.225, yRadius: tile.width * 0.225)
+
+    // Graphite tile with a soft top lift, matching AppTheme's dark background layers.
     NSGradient(
-        starting: NSColor(red: 0.20, green: 0.55, blue: 0.98, alpha: 1),
-        ending: NSColor(red: 0.42, green: 0.27, blue: 0.86, alpha: 1)
-    )!.draw(in: shape, angle: -70)
+        starting: NSColor(srgbRed: 0x22 / 255, green: 0x25 / 255, blue: 0x2A / 255, alpha: 1),
+        ending: NSColor(srgbRed: 0x0D / 255, green: 0x0E / 255, blue: 0x10 / 255, alpha: 1)
+    )!.draw(in: shape, angle: -90)
+
+    // Faint chartreuse glow from the top-right corner.
+    NSGraphicsContext.saveGraphicsState()
+    shape.addClip()
+    NSGradient(
+        starting: NSColor(srgbRed: 0xC6 / 255, green: 0xF3 / 255, blue: 0x5E / 255, alpha: 0.16),
+        ending: NSColor(srgbRed: 0xC6 / 255, green: 0xF3 / 255, blue: 0x5E / 255, alpha: 0)
+    )!.draw(fromCenter: NSPoint(x: tile.maxX, y: tile.maxY), radius: 0,
+            toCenter: NSPoint(x: tile.maxX, y: tile.maxY), radius: tile.width * 0.9, options: [])
+    NSGraphicsContext.restoreGraphicsState()
+
+    // Hairline border.
+    let inner = NSBezierPath(
+        roundedRect: tile.insetBy(dx: size / 512, dy: size / 512),
+        xRadius: tile.width * 0.225, yRadius: tile.width * 0.225
+    )
+    inner.lineWidth = max(size / 256, 0.5)
+    NSColor.white.withAlphaComponent(0.10).setStroke()
+    inner.stroke()
 
     let configuration = NSImage.SymbolConfiguration(pointSize: tile.width * 0.5, weight: .medium)
-        .applying(.init(paletteColors: [.white]))
+        .applying(.init(paletteColors: [NSColor(srgbRed: 0xC6 / 255, green: 0xF3 / 255, blue: 0x5E / 255, alpha: 1)]))
     if let symbol = NSImage(systemSymbolName: "photo.stack", accessibilityDescription: nil)?
         .withSymbolConfiguration(configuration) {
         let fit = tile.width * 0.56
