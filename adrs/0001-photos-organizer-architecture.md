@@ -1,6 +1,6 @@
 # ADR 0001: Photos Organizer architecture and core decisions
 
-- **Status:** Accepted
+- **Status:** Accepted. Implementation superseded by [ADR 0003](0003-native-swift-macos-app.md) (Swift rewrite); the behaviour decisions still apply.
 - **Date:** 2026-10-11
 - **Deciders:** Project owner
 

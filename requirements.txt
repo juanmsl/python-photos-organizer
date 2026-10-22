@@ -1,6 +1,0 @@
-PySide6-Essentials>=6.8
-Pillow>=11.0
-pillow-heif>=0.20
-ExifRead>=3.0
-hachoir>=3.3
-Send2Trash>=1.8

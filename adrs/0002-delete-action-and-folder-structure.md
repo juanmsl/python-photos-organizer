@@ -1,6 +1,6 @@
 # ADR 0002: Delete action and configurable folder structure
 
-- **Status:** Accepted
+- **Status:** Accepted. Implementation superseded by [ADR 0003](0003-native-swift-macos-app.md) (Swift rewrite); the behaviour decisions still apply.
 - **Date:** 2026-10-13
 - **Deciders:** Project owner
 - **Builds on:** [ADR 0001](0001-photos-organizer-architecture.md). It extends decisions §4
