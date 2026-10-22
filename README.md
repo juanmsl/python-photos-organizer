@@ -80,7 +80,8 @@ The version comes from the `VERSION` file. Packaging options (environment variab
 ## Architecture decisions
 
 See [`adrs/`](adrs/) for the reasoning behind the design. [ADR 0003](adrs/0003-native-swift-macos-app.md)
-covers the move from Python/Qt to Swift.
+covers the move from Python/Qt to Swift, and [ADR 0004](adrs/0004-ui-design-system.md) the design
+system: new views use the tokens in `AppTheme.swift` and the components in `Components.swift`.
 
 ## Project layout
 
@@ -95,7 +96,10 @@ Sources/PhotosOrganizerCore/       # no UI; unit-tested
 Sources/PhotosOrganizer/           # SwiftUI app
   PhotosOrganizerApp.swift         # entry point
   AppModel.swift                   # window state, scan/organize tasks, settings
-  ContentView.swift                # main window, file-type filter, file table, log
+  AppTheme.swift                   # design tokens: colours, spacing, radii, motion
+  Components.swift                 # surfaces, buttons, segmented picker, switch, empty states
+  ContentView.swift                # main window: folders, file-type sidebar, control bar, activity log
+  FileListView.swift               # file table and its empty/loading states
   Dialogs.swift                    # folder pickers and confirmations
 Tests/PhotosOrganizerCoreTests/
 packaging/                         # Info.plist template and app icon
